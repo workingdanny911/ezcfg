@@ -1,6 +1,6 @@
 {
     "name": "ezcfg",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Lite and easy configuration management for Node.js",
     "license": "MIT",
     "author": "Sangwoo Hyun <wkdny.hyun@gmail.com>",

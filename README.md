@@ -32,7 +32,8 @@ yarn add ezcfg
 
 ```typescript
 // config.ts
-import { defineConfig, env, envNumber, envBoolean, envOptional } from 'ezcfg';
+import path from 'node:path';
+import { defineConfig, env, envNumber, envBoolean, envOptional, computed } from 'ezcfg';
 
 export const getConfig = defineConfig({
   // Required string
@@ -46,6 +47,10 @@ export const getConfig = defineConfig({
 
   // Optional string
   logLevel: envOptional('LOG_LEVEL', 'info'),
+
+  // Computed at runtime
+  projectRoot: computed(() => process.cwd()),
+  promptsDir: computed(() => path.resolve(import.meta.dirname, './prompts')),
 }, { loadEnv: true });
 ```
 
@@ -181,6 +186,23 @@ envJsonOptional<string[]>('ALLOWED_ORIGINS', ['localhost'])   // Returns EnvSpec
 
 ---
 
+### `computed(factory)`
+
+Creates a **computed config value** that is lazily evaluated at resolve time. Use this for runtime values like paths, timestamps, or any value derived from a function call.
+
+```typescript
+import path from 'node:path';
+import { computed } from 'ezcfg';
+
+computed(() => process.cwd())                                    // ComputedSpec<string>
+computed(() => path.resolve(import.meta.dirname, './prompts'))   // ComputedSpec<string>
+computed(() => Date.now())                                       // ComputedSpec<number>
+```
+
+If the factory throws, the error is collected alongside other validation errors in `ConfigValidationError`.
+
+---
+
 ### `loadEnvFiles(options?)`
 
 Manually loads .env files. Usually not needed if using `{ loadEnv: true }` with `defineConfig`.
@@ -248,13 +270,14 @@ try {
 ezcfg provides full type inference out of the box:
 
 ```typescript
-import { defineConfig, env, envNumber, envOptional, envBoolean } from 'ezcfg';
+import { defineConfig, env, envNumber, envOptional, envBoolean, computed } from 'ezcfg';
 
 const getConfig = defineConfig({
   apiKey: env('API_KEY'),
   port: envNumber('PORT'),
   debug: envBoolean('DEBUG'),
   optional: envOptional('OPTIONAL'),
+  projectRoot: computed(() => process.cwd()),
 });
 
 const config = getConfig();
@@ -265,6 +288,7 @@ const config = getConfig();
 //   readonly port: number;
 //   readonly debug: boolean;
 //   readonly optional: string | undefined;
+//   readonly projectRoot: string;
 // }
 ```
 

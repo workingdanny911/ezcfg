@@ -21,4 +21,6 @@ export {
     envJsonOptional,
 } from "./env-spec";
 
+export { ComputedSpec, computed } from "./computed-spec";
+
 export type { DatabaseConfig } from "./database-config";
