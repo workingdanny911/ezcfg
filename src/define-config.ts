@@ -1,3 +1,7 @@
+import fs from "node:fs";
+
+import dotenv from "dotenv";
+
 import { type InferConfigType, isConfigSpec } from "./config-spec";
 import { ConfigValidationError } from "./errors";
 import { loadEnvFiles } from "./load-env-files";
@@ -5,6 +9,7 @@ import { loadEnvFiles } from "./load-env-files";
 export interface ConfigOptions {
     loadEnv?: boolean;
     envLoader?: () => void;
+    fromEnvFile?: string;
 }
 
 export function defineConfig<S extends Record<string, unknown>>(
@@ -18,7 +23,11 @@ export function defineConfig<S extends Record<string, unknown>>(
             return instance;
         }
 
-        if (options?.loadEnv) {
+        let envSource: Record<string, string> | undefined;
+
+        if (options?.fromEnvFile) {
+            envSource = parseEnvFile(options.fromEnvFile);
+        } else if (options?.loadEnv) {
             if (options.envLoader) {
                 options.envLoader();
             } else {
@@ -31,7 +40,7 @@ export function defineConfig<S extends Record<string, unknown>>(
 
         for (const [key, value] of Object.entries(schema)) {
             if (isConfigSpec(value)) {
-                config[key] = value.resolve(errors);
+                config[key] = value.resolve(errors, envSource);
             } else {
                 config[key] = value;
             }
@@ -44,4 +53,9 @@ export function defineConfig<S extends Record<string, unknown>>(
         instance = config as InferConfigType<S>;
         return instance;
     };
+}
+
+export function parseEnvFile(filePath: string): Record<string, string> {
+    const content = fs.readFileSync(filePath, "utf-8");
+    return dotenv.parse(content);
 }

@@ -10,8 +10,8 @@ export class EnvSpec<T> implements ConfigSpec<T> {
         private readonly transform?: (value: string) => T
     ) {}
 
-    resolve(errors: string[]): T | undefined {
-        const rawValue = process.env[this.envKey];
+    resolve(errors: string[], envSource?: Record<string, string>): T | undefined {
+        const rawValue = (envSource ?? process.env)[this.envKey];
 
         if (!rawValue && this.required) {
             errors.push(`Missing required env: ${this.envKey}`);

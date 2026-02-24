@@ -12,6 +12,11 @@
             "types": "./dist/index.d.ts",
             "import": "./dist/index.mjs",
             "require": "./dist/index.js"
+        },
+        "./postgres": {
+            "types": "./dist/postgres.d.ts",
+            "import": "./dist/postgres.mjs",
+            "require": "./dist/postgres.js"
         }
     },
     "files": [

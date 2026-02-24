@@ -9,8 +9,10 @@ Lite and easy configuration management for Node.js with full TypeScript support.
 
 - **Type-safe configuration** - Full TypeScript support with automatic type inference
 - **Automatic .env file loading** - Loads environment files based on `NODE_ENV`
+- **Direct .env file parsing** - Read from a specific `.env` file without modifying `process.env`
 - **Validation with clear error messages** - Collects all validation errors at once
-- **Zero runtime dependencies** - Only uses `dotenv` for .env file parsing
+- **PostgreSQL config support** - Built-in `postgresConfig` spec via `ezcfg/postgres`
+- **Extensible** - Implement `ConfigSpec` to add custom config types
 - **Singleton pattern** - Config is lazily evaluated and cached (except in test environment)
 
 ## Installation
@@ -90,12 +92,40 @@ const config = getConfig(); // Lazily evaluated and cached
 | `schema` | `Record<string, unknown>` | Object defining your configuration shape |
 | `options.loadEnv` | `boolean` | Whether to load .env files automatically (default: `false`) |
 | `options.envLoader` | `() => void` | Custom function to load environment variables |
+| `options.fromEnvFile` | `string` | Path to a `.env` file to parse directly (does not modify `process.env`) |
 
 **Behavior:**
 
 - Returns a factory function that lazily evaluates and caches the config
 - In test environment (`NODE_ENV=test`), config is re-evaluated on each call
 - Throws `ConfigValidationError` if any required values are missing
+- When `fromEnvFile` is set, the file is parsed into a local object and passed to each spec's `resolve()` — `process.env` is never modified
+
+---
+
+### `parseEnvFile(filePath)`
+
+Parses a `.env` file and returns its contents as a `Record<string, string>`. Does not modify `process.env`.
+
+```typescript
+import { parseEnvFile } from 'ezcfg';
+
+const env = parseEnvFile('/path/to/.env');
+// { DATABASE_URL: 'postgres://...', API_KEY: 'secret' }
+```
+
+Useful for injecting env vars into test runners:
+
+```typescript
+// vitest.config.ts
+import { parseEnvFile } from 'ezcfg';
+
+export default defineConfig({
+  test: {
+    env: parseEnvFile(resolve(__dirname, '.env')),
+  },
+});
+```
 
 ---
 
@@ -216,6 +246,90 @@ loadEnvFiles({
 });
 ```
 
+---
+
+## `ezcfg/postgres`
+
+PostgreSQL configuration support, available as a subpath import.
+
+```typescript
+import { postgresConfig, PostgresConfig } from 'ezcfg/postgres';
+```
+
+### `postgresConfig(prefix, mode?)`
+
+A `ConfigSpec` implementation for PostgreSQL database configuration. Use with `defineConfig`.
+
+```typescript
+import { defineConfig } from 'ezcfg';
+import { postgresConfig } from 'ezcfg/postgres';
+
+const getConfig = defineConfig({
+  db: postgresConfig('ORDER_DB'),           // reads ORDER_DB_URL
+  db2: postgresConfig('PG', 'fields'),      // reads PG_HOST, PG_PORT, etc.
+});
+
+getConfig().db.host;        // "localhost"
+getConfig().db.toString();  // "postgres://..."
+```
+
+**Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `prefix` | `string` | — | Environment variable prefix |
+| `mode` | `"url" \| "fields"` | `"url"` | `"url"` reads `{PREFIX}_URL`, `"fields"` reads individual fields |
+
+**Fields mode** reads: `{PREFIX}_HOST`, `{PREFIX}_PORT`, `{PREFIX}_DATABASE`, `{PREFIX}_USER`, `{PREFIX}_PASSWORD`
+
+### `PostgresConfig`
+
+Immutable value object representing a PostgreSQL connection configuration.
+
+```typescript
+import { PostgresConfig } from 'ezcfg/postgres';
+
+// From URL
+const config = PostgresConfig.fromUrl('postgres://user:pass@localhost:5432/mydb');
+
+// From environment variables
+const config = PostgresConfig.fromEnv('DATABASE');       // reads DATABASE_URL
+const config = PostgresConfig.fromEnv('PG', { mode: 'fields' });
+
+// Builder methods (each returns a new instance)
+config.withDatabase('other_db');
+config.withHost('remote-host');
+config.withPort(5433);
+config.withUser('admin');
+config.withPassword('secret');
+config.withPoolSize(10);
+config.withConnectionTimeout(5000);
+config.withIdleTimeout(30000);
+
+// Connection string
+config.toString();  // "postgres://user:pass@localhost:5432/mydb"
+```
+
+### Using with `fromEnvFile`
+
+`postgresConfig` works with `fromEnvFile` — the `.env` file is parsed locally without modifying `process.env`:
+
+```typescript
+import { defineConfig } from 'ezcfg';
+import { postgresConfig } from 'ezcfg/postgres';
+
+const getConfig = defineConfig(
+  { db: postgresConfig('DATABASE') },
+  { fromEnvFile: resolve(__dirname, '.env') }
+);
+
+// .env contains: DATABASE_URL=postgres://user@localhost/mydb
+const config = getConfig();
+config.db.database;  // "mydb"
+```
+
+---
+
 ## .env File Loading
 
 When `loadEnv: true` is set, ezcfg automatically loads environment files in the following order (later files override earlier ones):
@@ -241,7 +355,7 @@ When `loadEnv: true` is set, ezcfg automatically loads environment files in the 
 When validation fails, ezcfg throws a `ConfigValidationError` with all errors collected:
 
 ```typescript
-import { defineConfig, env, ConfigValidationError } from 'ezcfg';
+import { defineConfig, env, envNumber, ConfigValidationError } from 'ezcfg';
 
 const getConfig = defineConfig({
   apiKey: env('API_KEY'),
@@ -297,7 +411,7 @@ const config = getConfig();
 You can also extract the config type for use elsewhere:
 
 ```typescript
-import { defineConfig, env, type InferConfigType } from 'ezcfg';
+import { defineConfig, env, envNumber, type InferConfigType } from 'ezcfg';
 
 const schema = {
   apiKey: env('API_KEY'),
@@ -315,75 +429,30 @@ function initializeApp(config: AppConfig) {
 }
 ```
 
-## Examples
+## Custom ConfigSpec
 
-### Database Configuration
-
-```typescript
-import { defineConfig, env, envNumber, envOptional } from 'ezcfg';
-
-export const getDbConfig = defineConfig({
-  host: env('DB_HOST'),
-  port: envNumber('DB_PORT'),
-  database: env('DB_NAME'),
-  user: env('DB_USER'),
-  password: envOptional('DB_PASSWORD'),
-}, { loadEnv: true });
-
-// Usage
-const db = getDbConfig();
-const connectionString = `postgres://${db.user}:${db.password}@${db.host}:${db.port}/${db.database}`;
-```
-
-### API Service Configuration
+Implement the `ConfigSpec` interface to create your own config types:
 
 ```typescript
-import { defineConfig, env, envNumber, envBoolean, envJsonOptional } from 'ezcfg';
+import type { ConfigSpec } from 'ezcfg';
 
-export const getConfig = defineConfig({
-  // Server
-  port: envNumber('PORT'),
-  host: envOptional('HOST', '0.0.0.0'),
+class RedisConfigSpec implements ConfigSpec<RedisConfig> {
+  readonly _type = 'redis';
 
-  // API Keys
-  apiKey: env('API_KEY'),
-  secretKey: env('SECRET_KEY'),
+  constructor(private readonly prefix: string) {}
 
-  // Features
-  debug: envBoolean('DEBUG', false),
-  enableMetrics: envBoolean('ENABLE_METRICS', true),
+  resolve(errors: string[], envSource?: Record<string, string>): RedisConfig | undefined {
+    const source = envSource ?? process.env;
+    const url = source[`${this.prefix}_URL`];
 
-  // CORS
-  allowedOrigins: envJsonOptional<string[]>('ALLOWED_ORIGINS', ['http://localhost:3000']),
-}, { loadEnv: true });
-```
+    if (!url) {
+      errors.push(`Missing ${this.prefix}_URL`);
+      return undefined;
+    }
 
-### Multi-environment Setup
-
-```
-project/
-├── .env                 # Shared defaults
-├── .env.local           # Local secrets (gitignored)
-├── .env.development     # Development settings
-├── .env.production      # Production settings
-└── .env.test            # Test settings
-```
-
-```bash
-# .env
-LOG_LEVEL=info
-API_TIMEOUT=5000
-
-# .env.development
-DEBUG=true
-API_URL=http://localhost:3000
-
-# .env.production
-DEBUG=false
-API_URL=https://api.example.com
-
-# .env.local (gitignored)
-API_KEY=your-secret-key
+    return new RedisConfig(url);
+  }
+}
 ```
 
 ## License

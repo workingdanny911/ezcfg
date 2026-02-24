@@ -5,7 +5,7 @@ export class ComputedSpec<T> implements ConfigSpec<T> {
 
     constructor(private readonly factory: () => T) {}
 
-    resolve(errors: string[]): T | undefined {
+    resolve(errors: string[], _envSource?: Record<string, string>): T | undefined {
         try {
             return this.factory();
         } catch (e) {

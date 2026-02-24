@@ -1,3 +1,7 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
     env,
@@ -219,6 +223,70 @@ describe("EnvSpec", () => {
 
             const config2 = getConfig();
             expect(config2.apiKey).toBe("key2");
+        });
+    });
+
+    describe("fromEnvFile", () => {
+        function writeTempEnv(content: string): string {
+            const filePath = path.join(os.tmpdir(), `ezcfg-test-${Date.now()}.env`);
+            fs.writeFileSync(filePath, content);
+            return filePath;
+        }
+
+        it("should resolve env vars from file without modifying process.env", () => {
+            const envFile = writeTempEnv("API_KEY=from-file\nPORT=4000");
+
+            const getConfig = defineConfig(
+                { apiKey: env("API_KEY"), port: envNumber("PORT") },
+                { fromEnvFile: envFile }
+            );
+            const config = getConfig();
+
+            expect(config.apiKey).toBe("from-file");
+            expect(config.port).toBe(4000);
+            expect(process.env.API_KEY).toBeUndefined();
+
+            fs.unlinkSync(envFile);
+        });
+
+        it("should throw for missing required env in file", () => {
+            const envFile = writeTempEnv("OTHER_KEY=value");
+
+            const getConfig = defineConfig(
+                { apiKey: env("API_KEY") },
+                { fromEnvFile: envFile }
+            );
+
+            expect(() => getConfig()).toThrow("Missing required env: API_KEY");
+
+            fs.unlinkSync(envFile);
+        });
+
+        it("should not be affected by process.env values", () => {
+            process.env.API_KEY = "from-process";
+            const envFile = writeTempEnv("API_KEY=from-file");
+
+            const getConfig = defineConfig(
+                { apiKey: env("API_KEY") },
+                { fromEnvFile: envFile }
+            );
+
+            expect(getConfig().apiKey).toBe("from-file");
+
+            fs.unlinkSync(envFile);
+        });
+
+        it("should use default values for missing optional vars", () => {
+            const envFile = writeTempEnv("");
+
+            const getConfig = defineConfig(
+                { level: envOptional("LOG_LEVEL", "info") },
+                { fromEnvFile: envFile }
+            );
+
+            expect(getConfig().level).toBe("info");
+
+            fs.unlinkSync(envFile);
         });
     });
 

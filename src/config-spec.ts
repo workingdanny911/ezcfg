@@ -1,6 +1,6 @@
 export interface ConfigSpec<T> {
     readonly _type: string;
-    resolve(errors: string[]): T | undefined;
+    resolve(errors: string[], envSource?: Record<string, string>): T | undefined;
 }
 
 export type InferSpecType<S> = S extends ConfigSpec<infer T> ? T : S;

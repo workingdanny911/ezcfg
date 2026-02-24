@@ -7,7 +7,7 @@ export {
 
 export { ConfigValidationError } from "./errors";
 
-export { defineConfig, type ConfigOptions } from "./define-config";
+export { defineConfig, parseEnvFile, type ConfigOptions } from "./define-config";
 export { loadEnvFiles } from "./load-env-files";
 
 export {
