@@ -1,48 +1,44 @@
 {
-    "name": "ezcfg",
-    "version": "0.3.0",
-    "description": "Lite and easy configuration management for Node.js",
-    "license": "MIT",
-    "author": "Sangwoo Hyun <wkdny.hyun@gmail.com>",
-    "main": "./dist/index.js",
-    "module": "./dist/index.mjs",
-    "types": "./dist/index.d.ts",
-    "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.mjs",
-            "require": "./dist/index.js"
-        },
-        "./postgres": {
-            "types": "./dist/postgres.d.ts",
-            "import": "./dist/postgres.mjs",
-            "require": "./dist/postgres.js"
-        }
+  "name": "ezcfg",
+  "version": "0.3.1",
+  "type": "module",
+  "description": "Lite and easy configuration management for Node.js",
+  "license": "MIT",
+  "author": "Sangwoo Hyun <wkdny.hyun@gmail.com>",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
-    "files": [
-        "dist",
-        "LICENSE"
-    ],
-    "scripts": {
-        "build": "tsup",
-        "test": "vitest run",
-        "test:watch": "vitest"
-    },
-    "dependencies": {
-        "dotenv": "^17.2.3"
-    },
-    "devDependencies": {
-        "@types/node": "^25.1.0",
-        "tsup": "^8.5.1",
-        "typescript": "^5.9.3",
-        "vitest": "^4.0.18"
-    },
-    "keywords": [
-        "config",
-        "configuration",
-        "env",
-        "environment",
-        "typescript",
-        "type-safe"
-    ]
+    "./postgres": {
+      "types": "./dist/postgres.d.ts",
+      "import": "./dist/postgres.js"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsgo -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.1.0",
+    "@typescript/native-preview": "^7.0.0-dev",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "keywords": [
+    "config",
+    "configuration",
+    "env",
+    "environment",
+    "typescript",
+    "type-safe"
+  ]
 }

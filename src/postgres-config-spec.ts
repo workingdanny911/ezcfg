@@ -1,5 +1,5 @@
-import type { ConfigSpec } from "./config-spec";
-import { PostgresConfig, type FromEnvOptions } from "./postgres-config";
+import type { ConfigSpec } from "./config-spec.js";
+import { PostgresConfig, type FromEnvOptions } from "./postgres-config.js";
 
 export class PostgresConfigSpec implements ConfigSpec<PostgresConfig> {
     readonly _type = "postgres";

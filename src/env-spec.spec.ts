@@ -11,9 +11,9 @@ import {
     envBoolean,
     envJson,
     envJsonOptional,
-} from "./env-spec";
-import { defineConfig } from "./define-config";
-import { ConfigValidationError } from "./errors";
+} from "./env-spec.js";
+import { defineConfig } from "./define-config.js";
+import { ConfigValidationError } from "./errors.js";
 
 describe("EnvSpec", () => {
     const originalEnv = process.env;

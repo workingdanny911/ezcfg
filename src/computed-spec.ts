@@ -1,4 +1,4 @@
-import type { ConfigSpec } from "./config-spec";
+import type { ConfigSpec } from "./config-spec.js";
 
 export class ComputedSpec<T> implements ConfigSpec<T> {
     readonly _type = "computed";

@@ -1,4 +1,4 @@
-import type { DatabaseConfig } from "./database-config";
+import type { DatabaseConfig } from "./database-config.js";
 
 export interface PoolOptions {
     size?: number;

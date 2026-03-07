@@ -3,12 +3,12 @@ export {
     type InferSpecType,
     type InferConfigType,
     isConfigSpec,
-} from "./config-spec";
+} from "./config-spec.js";
 
-export { ConfigValidationError } from "./errors";
+export { ConfigValidationError } from "./errors.js";
 
-export { defineConfig, parseEnvFile, type ConfigOptions } from "./define-config";
-export { loadEnvFiles } from "./load-env-files";
+export { defineConfig, parseEnvFile, type ConfigOptions } from "./define-config.js";
+export { loadEnvFiles } from "./load-env-files.js";
 
 export {
     EnvSpec,
@@ -19,8 +19,8 @@ export {
     envBoolean,
     envJson,
     envJsonOptional,
-} from "./env-spec";
+} from "./env-spec.js";
 
-export { ComputedSpec, computed } from "./computed-spec";
+export { ComputedSpec, computed } from "./computed-spec.js";
 
-export type { DatabaseConfig } from "./database-config";
+export type { DatabaseConfig } from "./database-config.js";

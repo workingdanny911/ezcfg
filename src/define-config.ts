@@ -2,9 +2,9 @@ import fs from "node:fs";
 
 import dotenv from "dotenv";
 
-import { type InferConfigType, isConfigSpec } from "./config-spec";
-import { ConfigValidationError } from "./errors";
-import { loadEnvFiles } from "./load-env-files";
+import { type InferConfigType, isConfigSpec } from "./config-spec.js";
+import { ConfigValidationError } from "./errors.js";
+import { loadEnvFiles } from "./load-env-files.js";
 
 export interface ConfigOptions {
     loadEnv?: boolean;

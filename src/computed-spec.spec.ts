@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
-import { computed } from "./computed-spec";
-import { defineConfig } from "./define-config";
-import { env } from "./env-spec";
-import { ConfigValidationError } from "./errors";
+import { computed } from "./computed-spec.js";
+import { defineConfig } from "./define-config.js";
+import { env } from "./env-spec.js";
+import { ConfigValidationError } from "./errors.js";
 
 describe("ComputedSpec", () => {
     const originalEnv = process.env;
